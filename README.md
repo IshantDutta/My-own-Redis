@@ -74,7 +74,7 @@ build-your-own-redis/
 ### 1. Clone the repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+git clone https://github.com/IshantDutta/My-own-Redis
 cd build-your-own-redis
 ```
 
