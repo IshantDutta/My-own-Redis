@@ -1,7 +1,27 @@
+
 import socket
 
 HOST = "127.0.0.1"
 PORT = 6379
+
+BUFFER_SIZE = 1024
+
+
+def receive_message(client, buffer):
+    """Read one complete newline-delimited response."""
+
+    while b"\n" not in buffer:
+
+        data = client.recv(BUFFER_SIZE)
+
+        if not data:
+            raise ConnectionError("Server disconnected")
+
+        buffer += data
+
+    message, buffer = buffer.split(b"\n", 1)
+
+    return message.decode("utf-8"), buffer
 
 
 def start_client():
@@ -11,12 +31,15 @@ def start_client():
         socket.SOCK_STREAM
     )
 
-    client.connect((HOST, PORT))
-
-    print("Connected to our Redis server!")
-    print("Type PING to test or EXIT to quit.")
+    response_buffer = b""
 
     try:
+
+        client.connect((HOST, PORT))
+
+        print("Connected to our Redis server!")
+        print("Type EXIT to quit.")
+
         while True:
 
             command = input("redis> ")
@@ -24,26 +47,24 @@ def start_client():
             if command.upper() == "EXIT":
                 break
 
-            # Send command with newline delimiter
+            # Send command
             message = command + "\n"
 
             client.sendall(message.encode("utf-8"))
 
-            # Receive response until newline
-            response_buffer = b""
+            # Receive one complete response
+            response, response_buffer = receive_message(
+                client,
+                response_buffer
+            )
 
-            while b"\n" not in response_buffer:
-                data = client.recv(1024)
+            print(response)
 
-                if not data:
-                    print("Server disconnected.")
-                    return
+    except ConnectionError as error:
+        print(f"Connection error: {error}")
 
-                response_buffer += data
-
-            response, remaining = response_buffer.split(b"\n", 1)
-
-            print(response.decode("utf-8"))
+    except OSError as error:
+        print(f"Socket error: {error}")
 
     finally:
         client.close()
